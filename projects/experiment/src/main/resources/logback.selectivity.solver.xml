@@ -1,0 +1,30 @@
+<configuration>
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>
+      %msg%n
+     </pattern>
+    </encoder>
+  </appender>
+
+<!--  
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>selectivities.log</file>
+    <encoder>
+      <pattern>
+      %msg%n
+     </pattern>
+    </encoder>
+  </appender>
+-->  
+  
+<!--
+  <logger name="org.preferanto.experiment.selectivity" level="DEBUG" />
+  <logger name="org.preferanto.experiment.selectivity.SelectivityCalculator" level="TRACE" />
+  <logger name="org.preferanto.experiment.selectivity.SelectivityFitnessFunction" level="TRACE" />
+-->
+  <root level="INFO">
+    <appender-ref ref="STDOUT" />
+    <!-- appender-ref ref="FILE" / -->
+  </root>
+</configuration>

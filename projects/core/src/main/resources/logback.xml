@@ -1,0 +1,18 @@
+<configuration>
+  <appender name="STDOUT"
+    class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>
+        %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+     </pattern>
+    </encoder>
+  </appender>
+<!--  
+  <logger name="org.preferanto.core.ByteCodeHelper" level="TRACE" />
+-->  
+  <logger name="org.preferanto.poset.PosetUtil" level="DEBUG" />
+  <logger name="org.preferanto.experiment.poset.DurationListener" level="DEBUG" />
+  <root level="INFO">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>

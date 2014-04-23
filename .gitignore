@@ -1,0 +1,14 @@
+.gradle/
+build/
+bin/
+projects/experiment/results/
+projects/experiment/reference/
+.settings/
+!org.deved.antlride.core.prefs
+generated-java/
+.classpath
+.project
+*.tokens
+*.class
+*.log
+projects/_*.bat

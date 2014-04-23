@@ -1,0 +1,125 @@
+group JavaPreferantoEval;
+
+prefToJava ::= [
+"integer" : "long" ,
+"string" : "String" ,
+"real" : "double" ,
+"boolean" : "boolean",
+default : "String"
+]
+
+prefToGetter ::= [
+"integer" : "getLong" ,
+"string" : "getString" ,
+"real" : "getDouble" ,
+"boolean" : "getBoolean",
+default : "getString"
+]
+
+spec(spec, p, pc, cpc) ::= <<
+
+package org.preferanto.dynamic;
+
+import org.preferanto.core.PreferantoContext;
+
+public class PreferantoObjectives {
+    <spec.quantities : {q | public final <prefToJava.(q.type)> <q.name>;}; separator="\n">
+
+    public PreferantoObjectives(PreferantoContext ctx) {
+        <spec.quantities : {q | <q.name> = ctx.<prefToGetter.(q.type)>("<q.name>");}; separator="\n">
+    }
+}
+
+///////////////////////////////////////////////////////////////////////
+
+package org.preferanto.dynamic;
+
+import static org.preferanto.core.Utils.*;
+import org.preferanto.core.PreferantoEvaluator;
+import org.preferanto.core.PreferantoContext;
+
+public class PreferantoEvaluatorImpl implements PreferantoEvaluator {
+
+    @Override
+    public int getRuleCount() { return <pc>; }
+
+    @Override
+    public int getConditionalRuleCount() { return <cpc>; }
+
+    @Override
+    public double[] compare(int ruleIndex, PreferantoContext ctx1, PreferantoContext ctx2) {
+        PreferantoObjectives obj1 = new PreferantoObjectives(ctx1);
+        PreferantoObjectives obj2 = new PreferantoObjectives(ctx2);
+        switch(ruleIndex) {
+            <spec.preferences : {r | case <i0>: return compare<i0>(obj1, obj2);}; separator="\n">
+        }
+        return null;
+    }
+
+    <p>
+}
+>>
+
+quantities(q) ::= <<
+<q; separator="\n">
+>>
+
+preferences(p) ::= <<
+<p; separator="\n">
+>>
+
+pref(idx, c, gc, g) ::= <<
+private double[] compare<idx>(PreferantoObjectives obj1, PreferantoObjectives obj2) {
+    double[] result = null;    
+<if(c)>    if(<c>) {<endif>
+<g; separator="\n">
+<if(c)>    <endif>    result = new double[] {<g : {goal | result<i0>}; separator=",">};
+<if(c)>    }<endif>
+    return result;
+}
+>>
+
+
+goal(idx, c, t1, e1, t2, e2, high) ::= <<
+      <if(high)><if(c)>    <endif>    result = <prefToJava.(t1)>Diff(<e2>, <e1>);
+      <else><if(c)>    <endif>    result<idx> = <prefToJava.(t1)>Diff(<e1>, <e2>);
+        <endif>
+>>
+
+
+binaryOp(op, e1, e2) ::= <<
+<e1> <op> <e2>
+>>
+
+
+prefOp(atLeastOne, all, exactlyOne, e1, e2) ::= <<
+<if(atLeastOne)>(<e1>) || (<e2>)<elseif(all)>(<e1>) && (<e2>)
+<elseif(exactlyOne)>(<e1>) ^ (<e2>)
+<else>Math.abs(<e1> - <e2>)
+<endif>
+>>
+
+
+unaryAdd(op, e) ::= <<
+<op><e>
+>>
+
+
+unaryNot(e) ::= <<
+!<e>
+>>
+
+mathOne(f, e) ::= <<
+Math.<f>(<e>)
+>>
+ 
+mathTwo(f, e1, e2)    ::= <<
+Math.<f>(<e1>, <e2>)
+>>
+
+
+id(arg, name) ::= <<
+<if(arg)>obj<arg>.<name>
+<else>obj.<name>
+<endif>
+>>

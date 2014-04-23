@@ -1,0 +1,8 @@
+quantities {
+    z0: real;
+    z1: real;
+}
+
+preferences {
+	[EXACTLY_ONE(abs(z0 - z1) > 0.2)] abs(z0 - z1) : high;
+}

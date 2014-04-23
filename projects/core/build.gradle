@@ -1,0 +1,97 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+def generatedJavaDirBase = 'src/main/generated-java'
+def generatedJavaDir = generatedJavaDirBase + '/'
+def antlrOutputDir = generatedJavaDir + 'org/preferanto/antlr/'
+def antlrGrammarDirBase = 'src/main/antlr'
+def antlrGrammarDir = antlrGrammarDirBase + '/'
+
+
+repositories {
+  mavenCentral()
+}
+
+configurations {  
+  antlr3  
+}
+
+dependencies {
+    antlr3 'org.antlr:antlr:3.4'
+    
+    compile 'org.antlr:antlr-runtime:3.4'
+    compile 'org.apache.commons:commons-lang3:3.1'
+    compile 'org.ow2.asm:asm:4.2'
+}
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'Preferanto', 'Main-Class': 'org.preferanto.gui.PreferantoGui'
+    }
+}
+
+
+task generateWithANTLR3(type:Exec) {
+  mkdir(antlrOutputDir)
+
+  def args = ['java', '-cp', configurations.antlr3.asPath, 'org.antlr.Tool', '-o', antlrOutputDir]
+  def grammars = file(antlrGrammarDir).listFiles().findAll {it.name.endsWith('.g')}
+  grammars.each { args << it }
+
+  commandLine args
+} 
+
+task cleanGeneratedJava(type:Delete) {
+  delete generatedJavaDir
+}
+
+compileJava {
+  dependsOn generateWithANTLR3
+  source(generatedJavaDir)
+}
+
+
+clean.dependsOn cleanGeneratedJava
+
+task copyResources(type: Copy) {
+    from 'src/main/antlr'
+    into 'build/resources/main'
+    include '**/*.stg'
+}
+
+jar {
+    dependsOn configurations.runtime, copyResources
+    // from { configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) } }
+}
+
+
+///////////  ECLIPSE //////////////////
+eclipse.project { 
+     natures 'org.deved.antlride.core.nature'
+     buildCommand 'org.eclipse.dltk.core.scriptbuilder'
+}
+
+eclipse.classpath.file {
+    whenMerged { classpath ->
+        def skipGenerated = false;
+        def skipAntlr = false;
+        classpath.entries.each { entry ->
+            if(entry.kind == 'src') { 
+                if(entry.path.equals(generatedJavaDir) || entry.path.equals(generatedJavaDirBase)) {
+                    skipGenerated = true;
+                }
+                if(entry.path.equals(antlrGrammarDir) || entry.path.equals(antlrGrammarDirBase)) {
+                    skipAntlr = true;
+                }
+            }
+        }
+        if(!skipGenerated) {
+            classpath.entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder(generatedJavaDirBase, null))
+        }
+        if(!skipAntlr) {
+            def antlrSrcFolder = new org.gradle.plugins.ide.eclipse.model.SourceFolder(antlrGrammarDirBase, null)
+            antlrSrcFolder.includes << "*.stg"
+            classpath.entries.add(antlrSrcFolder)
+        }
+    }
+}

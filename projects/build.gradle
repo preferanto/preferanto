@@ -1,0 +1,177 @@
+import org.gradle.api.internal.plugins.StartScriptGenerator
+import org.apache.tools.ant.filters.ReplaceTokens
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.9'
+}
+
+repositories {
+  mavenCentral()
+}
+
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    apply plugin: 'eclipse'
+
+    repositories {
+      mavenCentral()
+    }
+
+    sourceCompatibility = 1.7
+    group = 'org.preferanto'
+
+    [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+    configurations {
+      compile {transitive = true}
+    }
+
+    dependencies {
+      compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.+'
+      compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.+'
+    
+      testCompile 'junit:junit:4.+'
+    }
+
+    jar {
+        baseName = "preferanto-${project.archivesBaseName}-${preferantoVersion}"
+        manifest {
+            attributes 'Implementation-Title': 'Preferanto',
+                    'Implementation-Version': preferantoVersion,
+                    'Implementation-Vendor-Id': 'preferanto.org'
+        }
+
+    }
+
+    task "create-dirs" << {
+       sourceSets*.java.srcDirs*.each { it.mkdirs() }
+       sourceSets*.resources.srcDirs*.each { it.mkdirs() }
+    }
+
+
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        classifier = 'sources'
+        from sourceSets.main.allSource
+
+    }
+
+    artifacts {
+        archives sourcesJar
+    }
+
+    uploadArchives {
+        repositories {
+           flatDir {
+               dirs 'repos'
+           }
+        }
+    }
+
+    ///////////  ECLIPSE //////////////////
+
+    def resourcesDir = 'src/main/resources/'
+    eclipse.classpath.file {
+        beforeMerged { classpath ->
+            classpath.entries.removeAll()
+        }
+        whenMerged { classpath ->
+            classpath.entries.findAll { entry -> entry.kind == 'lib' }*.exported = true
+            classpath.entries.removeAll { entry -> entry.kind == 'src' && entry.path.contains('/resources') }
+            classpath.entries.add(new org.gradle.plugins.ide.eclipse.model.SourceFolder(resourcesDir, null))
+        }
+    }
+    
+
+    eclipse.project {
+        name = 'preferanto.' + project.name
+    
+        file.beforeMerged { project ->
+            project.natures.clear()
+        }
+    }
+}
+
+
+
+task clean(type: Delete) {
+    File build = new File(project.projectDir.path,'/build')
+    delete build
+}
+
+
+project('experiment') {
+    dependencies {
+        compile project(':core')
+        compile project(':moeap')
+    }
+}
+
+project('moeap') {
+    dependencies {
+        // compile project(':core')
+    }
+}
+
+
+//////////////////
+// Distribution //
+//////////////////
+
+
+def void createScript(String name, String mainClass, Iterable<String> classpath) {
+    def generator = new StartScriptGenerator()
+    generator.applicationName = name
+    generator.mainClassName = mainClass
+
+    def outputDir = file("build/bin")
+    def scriptName = new File(outputDir, "${name}.bat")
+
+    generator.scriptRelPath = 'bin' 
+    generator.classpath = classpath
+    
+    String nativeOutput = scriptPrefix + generator.generateWindowsScriptContent()
+    
+    generator.writeToFile(nativeOutput, scriptName);    
+}
+
+def void createScript(String name, String mainClass) {
+    createScript(name, mainClass, ['.', '../lib/*'])
+}
+
+
+task performanceTest << {
+    createScript('performanceTest', "org.preferanto.experiment.trial.perf.PerformanceTest")  
+}
+
+
+task startScripts(dependsOn: [performanceTest])
+
+
+task distZip(type: Zip, dependsOn: [":experiment:assemble", "startScripts"], description: "Creates the binary distribution zip: build\\distributions\\preferanto-${preferantoVersion}.zip") {
+  baseName = "preferanto-" + preferantoVersion
+  destinationDir = file("build/distributions")
+  def baseDir = { archiveName - ".zip" }
+  into(baseDir) {
+    from(file("dist")) {
+      filter(ReplaceTokens, tokens: [preferantoVersion: preferantoVersion])
+    }
+    from(project(':experiment').file("src/dist"))
+    into("lib") {
+        exclude('**/asm-3*.jar')
+        from(project(':experiment').jar)
+        from(project(':experiment').configurations.runtime)
+    }
+    into("bin") {
+        from(project.file("build/bin"))
+    }
+  }
+  eachFile { it.duplicatesStrategy = 'exclude' }
+}
+

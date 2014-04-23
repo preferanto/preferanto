@@ -1,0 +1,8 @@
+quantities {
+    z0: real;
+    z1: real;
+}
+
+preferences {
+	abs(z0 - z1) : high;
+}

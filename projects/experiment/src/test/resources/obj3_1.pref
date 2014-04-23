@@ -1,0 +1,13 @@
+quantities {
+    z0: real;
+    z1: real;
+    z2: real;
+}
+
+preferences {
+    [ALL(z0 > 0.5)] z0;
+    [EXACTLY_ONE(z1 < 0.6)] z1;
+    [AT_LEAST_ONE(z2 < 0.4)] z2;
+    [ALL(z1 > 0.3)] (z1 + z2);
+    z0;
+}

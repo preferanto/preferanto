@@ -1,0 +1,19 @@
+quantities {
+    responseTime: real;
+    cost : real;
+    availability : real;
+}
+
+preferences {
+    [EXACTLY_ONE(responseTime > 5)] responseTime;
+    [AT_LEAST_ONE(cost >= 6) & ALL(availability < 0.99)] cost;
+    [AT_LEAST_ONE(availability < 0.97)] <availability: high, responseTime>;
+    <cost + 0.33 * responseTime, availability:high>;
+}
+
+--CONTEXTS--
+7.0, 4.0, 0.95
+7.0, 5.0, 0.96
+5.5, 6.5, 0.98
+4.5, 8.0, 0.97
+7.5, 5.0, 0.99

@@ -1,0 +1,15 @@
+quantities {
+    z0: real;
+    z1: real;
+}
+
+preferences {
+    [ALL(z0 > 5)] z0;
+    [EXACTLY_ONE(z1 < 6)] z1;
+    z0;
+}
+
+--CONTEXTS--
+6, 7
+7, 5
+4, 8

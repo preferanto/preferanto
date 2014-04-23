@@ -1,0 +1,8 @@
+quantities {
+    z0: real;
+    z1: real;
+}
+
+preferences {
+	<z0+0.2*z1, z1+0.2*z0>;
+}

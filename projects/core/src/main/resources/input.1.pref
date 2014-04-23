@@ -1,0 +1,19 @@
+quantities {
+    responseTime: real;
+    cost : real;
+    colors : integer;
+}
+
+preferences {
+    [EXACTLY_ONE(responseTime > 5)] responseTime;
+    [AT_LEAST_ONE(cost >= 7)] cost;
+    [colors < 65536] colors: high;
+    responseTime;
+}
+
+--CONTEXTS--
+7.0, 4.0, 256
+7.0, 5.0, 256
+5.5, 6.5, 256
+4.5, 8.0, 65536
+7.5, 7.5, 65536
